@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout our repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Waveshare libraries
+        uses: actions/checkout@v4
+        with:
+          repository: waveshareteam/ESP32-S3-Touch-LCD-1.69
+          path: waveshare-source
+          sparse-checkout: |
+            examples/arduino/libraries
+          sparse-checkout-cone-mode: false
+
+      - name: Prepare libraries folder
+        run: |
+          mkdir -p libraries
+          cp -r waveshare-source/examples/arduino/libraries/Arduino_DriveBus libraries/
+          cp -r waveshare-source/examples/arduino/libraries/GFX_Library_for_Arduino libraries/
+          cp -r waveshare-source/examples/arduino/libraries/SensorLib libraries/
+          cp -r waveshare-source/examples/arduino/libraries/lvgl libraries/
+          cp waveshare-source/examples/arduino/libraries/lv_conf.h libraries/
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@3.3.11
+
+      - name: Compile
+        run: |
+          arduino-cli compile --fqbn esp32:esp32:esp32s3 --libraries libraries --export-binaries --output-dir build src/BarakatTime
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: build/*.bin
