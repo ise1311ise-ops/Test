@@ -29,7 +29,7 @@ uint32_t screenWidth;
 uint32_t screenHeight;
 static lv_disp_draw_buf_t draw_buf;
 
-/* ---------- Палитра ---------- */
+/* ---------- Палитра под дизайн с картинки ---------- */
 #define COLOR_BG          lv_color_hex(0x0B0F0E)
 #define COLOR_CARD        lv_color_hex(0x141A18)
 #define COLOR_GOLD        lv_color_hex(0xD4AF37)
@@ -38,7 +38,7 @@ static lv_disp_draw_buf_t draw_buf;
 #define COLOR_TEXT_DIM    lv_color_hex(0x8A8F8C)
 
 /* ---------- Тасбих ---------- */
-static uint32_t tasbih_count = 0;
+static uint32_t tasbih_count = 33; // По умолчанию на картинке 33
 static lv_obj_t *tasbih_label;
 static lv_obj_t *tasbih_arc;
 
@@ -78,138 +78,171 @@ static void tasbih_tap_cb(lv_event_t *e) {
   tasbih_count++;
   uint32_t pos = tasbih_count % 33;
   lv_arc_set_value(tasbih_arc, pos == 0 ? 33 : pos);
-  lv_label_set_text_fmt(tasbih_label, "%lu", tasbih_count);
+  lv_label_set_text_fmt(tasbih_label, "%lu", pos == 0 ? 33 : pos);
+}
+
+/* Установка общего фона / картинки для экрана */
+static void set_screen_background(lv_obj_t *tile) {
+  lv_obj_set_style_bg_color(tile, COLOR_BG, 0);
+  lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
+  
+  // Если у вас в image.h есть объявленная картинка фона, можно раскомментировать:
+  /*
+  lv_obj_t * bg_img = lv_img_create(tile);
+  lv_img_set_src(bg_img, &background_image_var);
+  lv_obj_align(bg_img, LV_ALIGN_CENTER, 0, 0);
+  */
+}
+
+/* ---------- Экран 0: Главная (Logo BarakatTime) ---------- */
+static void build_home_screen(lv_obj_t *tile) {
+  set_screen_background(tile);
+
+  lv_obj_t *logo_img = lv_img_create(tile);
+  // Предполагается, что в image.h есть иконка узора логотипа, например logo_icon
+  // lv_img_set_src(logo_img, &logo_icon); 
+  lv_obj_align(logo_img, LV_ALIGN_CENTER, 0, -20);
+
+  lv_obj_t *title = lv_label_create(tile);
+  lv_obj_set_style_text_color(title, COLOR_GOLD, 0);
+  lv_obj_set_style_text_font(title, &lv_font_montserrat_22, 0);
+  lv_label_set_text(title, "BarakatTime");
+  lv_obj_align(title, LV_ALIGN_CENTER, 0, 35);
 }
 
 /* ---------- Экран 1: Тасбих ---------- */
 static void build_tasbih_screen(lv_obj_t *tile) {
-  lv_obj_set_style_bg_color(tile, COLOR_BG, 0);
-  lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
+  set_screen_background(tile);
 
   lv_obj_t *arc = lv_arc_create(tile);
   tasbih_arc = arc;
-  lv_obj_set_size(arc, 200, 200);
+  lv_obj_set_size(arc, 210, 210);
   lv_obj_center(arc);
   lv_arc_set_rotation(arc, 270);
   lv_arc_set_bg_angles(arc, 0, 360);
   lv_arc_set_range(arc, 0, 33);
-  lv_arc_set_value(arc, 0);
+  lv_arc_set_value(arc, 33);
   lv_obj_remove_style(arc, NULL, LV_PART_KNOB);
   lv_obj_clear_flag(arc, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_style_arc_color(arc, COLOR_CARD, LV_PART_MAIN);
-  lv_obj_set_style_arc_width(arc, 10, LV_PART_MAIN);
+  lv_obj_set_style_arc_width(arc, 2, LV_PART_MAIN);
   lv_obj_set_style_arc_color(arc, COLOR_GOLD, LV_PART_INDICATOR);
-  lv_obj_set_style_arc_width(arc, 10, LV_PART_INDICATOR);
+  lv_obj_set_style_arc_width(arc, 3, LV_PART_INDICATOR);
 
   tasbih_label = lv_label_create(tile);
   lv_obj_set_style_text_color(tasbih_label, COLOR_TEXT, 0);
   lv_obj_set_style_text_font(tasbih_label, &lv_font_montserrat_48, 0);
-  lv_label_set_text(tasbih_label, "0");
+  lv_label_set_text(tasbih_label, "33");
   lv_obj_center(tasbih_label);
-
-  lv_obj_t *hint = lv_label_create(tile);
-  lv_obj_set_style_text_color(hint, COLOR_TEXT_DIM, 0);
-  lv_obj_set_style_text_font(hint, &lv_font_montserrat_14, 0);
-  lv_label_set_text(hint, "Коснитесь для отсчёта");
-  lv_obj_align(hint, LV_ALIGN_BOTTOM_MID, 0, -20);
 
   lv_obj_add_flag(tile, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(tile, tasbih_tap_cb, LV_EVENT_CLICKED, NULL);
 }
 
-/* ---------- Экран 2: Молитвы на сегодня ---------- */
+/* ---------- Экран 2: Обратный отсчет (Рамадан) ---------- */
+static void build_countdown_screen(lv_obj_t *tile) {
+  set_screen_background(tile);
+
+  lv_obj_t *card = lv_obj_create(tile);
+  lv_obj_set_size(card, 220, 180);
+  lv_obj_center(card);
+  lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
+  lv_obj_set_style_bg_opa(card, LV_OPA_50, 0);
+  lv_obj_set_style_radius(card, 16, 0);
+  lv_obj_set_style_border_width(card, 0, 0);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t *l_title = lv_label_create(card);
+  lv_obj_set_style_text_color(l_title, COLOR_TEXT_DIM, 0);
+  lv_obj_set_style_text_font(l_title, &lv_font_montserrat_14, 0);
+  lv_label_set_text(l_title, "Ramadan —");
+  lv_obj_align(l_title, LV_ALIGN_TOP_MID, 0, 15);
+
+  lv_obj_t *l_days = lv_label_create(card);
+  lv_obj_set_style_text_color(l_days, COLOR_GOLD, 0);
+  lv_obj_set_style_text_font(l_days, &lv_font_montserrat_32, 0);
+  lv_label_set_text(l_days, "127 days");
+  lv_obj_align(l_days, LV_ALIGN_CENTER, 0, -10);
+
+  // Линия прогресса
+  lv_obj_t *bar = lv_bar_create(card);
+  lv_obj_set_size(bar, 180, 6);
+  lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, -20);
+  lv_bar_set_value(bar, 65, LV_ANIM_OFF);
+  lv_obj_set_style_bg_color(bar, COLOR_BG, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(bar, COLOR_GOLD, LV_PART_INDICATOR);
+}
+
+/* ---------- Экран 3: Следующая молитва ---------- */
+static void build_next_prayer_screen(lv_obj_t *tile) {
+  set_screen_background(tile);
+
+  lv_obj_t *card = lv_obj_create(tile);
+  lv_obj_set_size(card, 220, 120);
+  lv_obj_center(card);
+  lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
+  lv_obj_set_style_bg_opa(card, LV_OPA_80, 0);
+  lv_obj_set_style_radius(card, 16, 0);
+  lv_obj_set_style_border_width(card, 0, 0);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t *l1 = lv_label_create(card);
+  lv_obj_set_style_text_color(l1, COLOR_TEXT, 0);
+  lv_obj_set_style_text_font(l1, &lv_font_montserrat_14, 0);
+  lv_label_set_text(l1, "Next Prayer — Maghrib");
+  lv_obj_align(l1, LV_ALIGN_TOP_MID, 0, 12);
+
+  lv_obj_t *l2 = lv_label_create(card);
+  lv_obj_set_style_text_color(l2, COLOR_TEXT, 0);
+  lv_obj_set_style_text_font(l2, &lv_font_montserrat_28, 0);
+  lv_label_set_text(l2, "00:45:48");
+  lv_obj_align(l2, LV_ALIGN_CENTER, 0, 10);
+}
+
+/* ---------- Экран 4: Список молитв ---------- */
 struct PrayerRow { const char *name; const char *time; };
 static PrayerRow prayers[] = {
-  {"Fajr",    "04:32"},
-  {"Dhuhr",   "12:15"},
-  {"Asr",     "15:47"},
-  {"Maghrib", "18:52"},
-  {"Isha",    "20:20"},
+  {"Fajr",    "02:38"},
+  {"Dhuhr",   "03:46"},
+  {"Asr",     "01:36"},
+  {"Maghrib", "02:49"},
+  {"Isha",    "08:38"},
 };
 
 static void build_prayers_screen(lv_obj_t *tile) {
-  lv_obj_set_style_bg_color(tile, COLOR_BG, 0);
-  lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
-  lv_obj_set_flex_flow(tile, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(tile, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_style_pad_row(tile, 6, 0);
-  lv_obj_set_style_pad_top(tile, 14, 0);
-  lv_obj_clear_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
+  set_screen_background(tile);
 
-  lv_obj_t *title = lv_label_create(tile);
-  lv_obj_set_style_text_color(title, COLOR_GOLD, 0);
-  lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
-  lv_label_set_text(title, "Молитвы сегодня");
+  lv_obj_t *card = lv_obj_create(tile);
+  lv_obj_set_size(card, 220, 195);
+  lv_obj_center(card);
+  lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
+  lv_obj_set_style_bg_opa(card, LV_OPA_80, 0);
+  lv_obj_set_style_radius(card, 16, 0);
+  lv_obj_set_style_border_width(card, 0, 0);
+  lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_style_pad_row(card, 8, 0);
+  lv_obj_set_style_pad_all(card, 12, 0);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
 
   for (auto &p : prayers) {
-    lv_obj_t *card = lv_obj_create(tile);
-    lv_obj_set_size(card, 200, 30);
-    lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
-    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(card, 10, 0);
-    lv_obj_set_style_border_width(card, 0, 0);
-    lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *row = lv_obj_create(card);
+    lv_obj_set_size(row, 196, 26);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row, 0, 0);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *name = lv_label_create(card);
+    lv_obj_t *name = lv_label_create(row);
     lv_obj_set_style_text_color(name, COLOR_TEXT, 0);
-    lv_obj_set_style_text_font(name, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(name, &lv_font_montserrat_14, 0);
     lv_label_set_text(name, p.name);
-    lv_obj_align(name, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_align(name, LV_ALIGN_LEFT_MID, 0, 0);
 
-    lv_obj_t *time = lv_label_create(card);
+-   lv_obj_t *time = lv_label_create(row);
     lv_obj_set_style_text_color(time, COLOR_GOLD, 0);
-    lv_obj_set_style_text_font(time, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(time, &lv_font_montserrat_14, 0);
     lv_label_set_text(time, p.time);
-    lv_obj_align(time, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_align(time, LV_ALIGN_RIGHT_MID, 0, 0);
   }
-}
-
-/* ---------- Экран 3: Обратный отсчёт ---------- */
-static void build_countdown_screen(lv_obj_t *tile) {
-  lv_obj_set_style_bg_color(tile, COLOR_BG, 0);
-  lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
-  lv_obj_set_flex_flow(tile, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(tile, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_style_pad_row(tile, 20, 0);
-  lv_obj_clear_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
-
-  lv_obj_t *card1 = lv_obj_create(tile);
-  lv_obj_set_size(card1, 200, 100);
-  lv_obj_set_style_bg_color(card1, COLOR_CARD, 0);
-  lv_obj_set_style_radius(card1, 16, 0);
-  lv_obj_set_style_border_width(card1, 0, 0);
-  lv_obj_clear_flag(card1, LV_OBJ_FLAG_SCROLLABLE);
-
-  lv_obj_t *l1 = lv_label_create(card1);
-  lv_obj_set_style_text_color(l1, COLOR_TEXT_DIM, 0);
-  lv_obj_set_style_text_font(l1, &lv_font_montserrat_12, 0);
-  lv_label_set_text(l1, "До следующей молитвы");
-  lv_obj_align(l1, LV_ALIGN_TOP_MID, 0, 12);
-
-  lv_obj_t *l2 = lv_label_create(card1);
-  lv_obj_set_style_text_color(l2, COLOR_GOLD, 0);
-  lv_obj_set_style_text_font(l2, &lv_font_montserrat_32, 0);
-  lv_label_set_text(l2, "01:24:07");
-  lv_obj_align(l2, LV_ALIGN_CENTER, 0, 8);
-
-  lv_obj_t *card2 = lv_obj_create(tile);
-  lv_obj_set_size(card2, 200, 80);
-  lv_obj_set_style_bg_color(card2, COLOR_CARD, 0);
-  lv_obj_set_style_radius(card2, 16, 0);
-  lv_obj_set_style_border_width(card2, 0, 0);
-  lv_obj_clear_flag(card2, LV_OBJ_FLAG_SCROLLABLE);
-
-  lv_obj_t *l3 = lv_label_create(card2);
-  lv_obj_set_style_text_color(l3, COLOR_TEXT_DIM, 0);
-  lv_obj_set_style_text_font(l3, &lv_font_montserrat_12, 0);
-  lv_label_set_text(l3, "До Рамадана");
-  lv_obj_align(l3, LV_ALIGN_TOP_MID, 0, 10);
-
-  lv_obj_t *l4 = lv_label_create(card2);
-  lv_obj_set_style_text_color(l4, COLOR_GREEN_LIGHT, 0);
-  lv_obj_set_style_text_font(l4, &lv_font_montserrat_22, 0);
-  lv_label_set_text(l4, "142 дня");
-  lv_obj_align(l4, LV_ALIGN_CENTER, 0, 8);
 }
 
 void setup() {
@@ -251,16 +284,21 @@ void setup() {
   indev_drv.read_cb = my_touchpad_read;
   lv_indev_drv_register(&indev_drv);
 
+  // Создаем Grid/Tileview с поддержкой горизонтальной прокрутки по всем экранам
   lv_obj_t *tv = lv_tileview_create(lv_scr_act());
   lv_obj_set_style_bg_color(tv, COLOR_BG, 0);
 
-  lv_obj_t *tile1 = lv_tileview_add_tile(tv, 0, 0, LV_DIR_HOR);
-  lv_obj_t *tile2 = lv_tileview_add_tile(tv, 1, 0, LV_DIR_HOR);
-  lv_obj_t *tile3 = lv_tileview_add_tile(tv, 2, 0, LV_DIR_HOR);
+  lv_obj_t *tile0 = lv_tileview_add_tile(tv, 0, 0, LV_DIR_HOR);
+  lv_obj_t *tile1 = lv_tileview_add_tile(tv, 1, 0, LV_DIR_HOR);
+  lv_obj_t *tile2 = lv_tileview_add_tile(tv, 2, 0, LV_DIR_HOR);
+  lv_obj_t *tile3 = lv_tileview_add_tile(tv, 3, 0, LV_DIR_HOR);
+  lv_obj_t *tile4 = lv_tileview_add_tile(tv, 4, 0, LV_DIR_HOR);
 
+  build_home_screen(tile0);
   build_tasbih_screen(tile1);
-  build_prayers_screen(tile2);
-  build_countdown_screen(tile3);
+  build_countdown_screen(tile2);
+  build_next_prayer_screen(tile3);
+  build_prayers_screen(tile4);
 
   const esp_timer_create_args_t lvgl_tick_timer_args = {
     .callback = &example_increase_lvgl_tick,
