@@ -4,6 +4,7 @@
 #include "pin_config.h"
 #include "lv_conf.h"
 #include "HWCDC.h"
+#include "image.h"
 
 HWCDC USBSerial;
 
@@ -32,9 +33,11 @@ static lv_disp_draw_buf_t draw_buf;
 #define COLOR_BG          lv_color_hex(0x0B0F0E)
 #define COLOR_CARD        lv_color_hex(0x141A18)
 #define COLOR_GOLD        lv_color_hex(0xD4AF37)
+#define COLOR_GREEN_LIGHT lv_color_hex(0x4FAE7C)
 #define COLOR_TEXT        lv_color_hex(0xF5F0E6)
 #define COLOR_TEXT_DIM    lv_color_hex(0x8A8F8C)
 
+/* ---------- Тасбих ---------- */
 static uint32_t tasbih_count = 33;
 static lv_obj_t *tasbih_label;
 static lv_obj_t *tasbih_arc;
@@ -70,7 +73,7 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data) {
   }
 }
 
-/* Тап по тасбиху */
+/* ---------- Тап по тасбиху ---------- */
 static void tasbih_tap_cb(lv_event_t *e) {
   tasbih_count++;
   uint32_t pos = tasbih_count % 33;
@@ -78,34 +81,20 @@ static void tasbih_tap_cb(lv_event_t *e) {
   lv_label_set_text_fmt(tasbih_label, "%lu", pos == 0 ? 33 : pos);
 }
 
-/* Генерация звездного неба и фона */
-static void create_starry_background(lv_obj_t *tile) {
+/* Общий фон экрана */
+static void set_screen_background(lv_obj_t *tile) {
   lv_obj_set_style_bg_color(tile, COLOR_BG, 0);
   lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
-
-  // Процедурная имитация звезд (случайные мелкие точки золотого/белого оттенка)
-  const int stars_x[] = {25, 45, 90, 130, 175, 205, 40, 110, 160, 215, 70, 190, 100, 140};
-  const int stars_y[] = {30, 75, 20, 110, 40, 85, 170, 210, 165, 190, 130, 140, 225, 95};
-  
-  for(int i = 0; i < 14; i++) {
-    lv_obj_t *star = lv_obj_create(tile);
-    lv_obj_set_size(star, (i % 3 == 0) ? 3 : 2, (i % 3 == 0) ? 3 : 2);
-    lv_obj_set_pos(star, stars_x[i], stars_y[i]);
-    lv_obj_set_style_bg_color(star, (i % 2 == 0) ? COLOR_GOLD : COLOR_TEXT, 0);
-    lv_obj_set_style_radius(star, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(star, 0, 0);
-    lv_obj_clear_flag(star, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-  }
 }
 
-/* Точки пагинации внизу */
+/* Создание точек пагинации внизу */
 static void add_pagination_dots(lv_obj_t *tile, int active_index) {
   lv_obj_t *dots_cont = lv_obj_create(tile);
   lv_obj_set_size(dots_cont, 80, 15);
-  lv_obj_align(dots_cont, LV_ALIGN_BOTTOM_MID, 0, -6);
+  lv_obj_align(dots_cont, LV_ALIGN_BOTTOM_MID, 0, -8);
   lv_obj_set_style_bg_opa(dots_cont, LV_OPA_TRANSP, 0);
   lv_obj_set_style_border_width(dots_cont, 0, 0);
-  lv_obj_clear_flag(dots_cont, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_clear_flag(dots_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   for (int i = 0; i < 5; i++) {
     lv_obj_t *dot = lv_obj_create(dots_cont);
@@ -126,7 +115,7 @@ static void create_mandala(lv_obj_t *parent, int size) {
   lv_obj_set_style_border_width(mandala_cont, 0, 0);
   lv_obj_clear_flag(mandala_cont, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
-  // Внешний круг узора
+  // Внешний контурный круг
   lv_obj_t *c1 = lv_obj_create(mandala_cont);
   lv_obj_set_size(c1, size, size);
   lv_obj_center(c1);
@@ -136,7 +125,7 @@ static void create_mandala(lv_obj_t *parent, int size) {
   lv_obj_set_style_bg_opa(c1, LV_OPA_TRANSP, 0);
   lv_obj_clear_flag(c1, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
-  // Внутренний перекрестный узор (мандала)
+  // Пересекающиеся линии узора (лепестки мандалы)
   for(int deg = 0; deg < 360; deg += 30) {
     lv_obj_t *line_petal = lv_obj_create(mandala_cont);
     lv_obj_set_size(line_petal, size - 20, 2);
@@ -149,12 +138,12 @@ static void create_mandala(lv_obj_t *parent, int size) {
   }
 }
 
-/* ---------- Экран 0: Главная (BarakatTime с логотипом-цветком) ---------- */
+/* ---------- Экран 1: Главная (BarakatTime с логотипом-цветком) ---------- */
 static void build_home_screen(lv_obj_t *tile) {
-  create_starry_background(tile);
+  set_screen_background(tile);
 
-  // Логотип-цветок (мини-мандала)
-  create_mandala(tile, 70);
+  // Логотип-цветок (мини-мандала из макета)
+  create_mandala(tile, 65);
 
   lv_obj_t *title = lv_label_create(tile);
   lv_obj_set_style_text_color(title, COLOR_TEXT, 0);
@@ -165,16 +154,16 @@ static void build_home_screen(lv_obj_t *tile) {
   add_pagination_dots(tile, 0);
 }
 
-/* ---------- Экран 1: Тасбих ---------- */
+/* ---------- Экран 2: Тасбих (с большой мандалой) ---------- */
 static void build_tasbih_screen(lv_obj_t *tile) {
-  create_starry_background(tile);
+  set_screen_background(tile);
 
-  // Мандала на заднем плане тасбиха
-  create_mandala(tile, 170);
+  // Мандала на заднем плане тасбиха (как на картинке)
+  create_mandala(tile, 175);
 
   lv_obj_t *arc = lv_arc_create(tile);
   tasbih_arc = arc;
-  lv_obj_set_size(arc, 190, 190);
+  lv_obj_set_size(arc, 200, 200);
   lv_obj_center(arc);
   lv_arc_set_rotation(arc, 270);
   lv_arc_set_bg_angles(arc, 0, 360);
@@ -183,9 +172,9 @@ static void build_tasbih_screen(lv_obj_t *tile) {
   lv_obj_remove_style(arc, NULL, LV_PART_KNOB);
   lv_obj_clear_flag(arc, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_style_arc_color(arc, COLOR_CARD, LV_PART_MAIN);
-  lv_obj_set_style_arc_width(arc, 1, LV_PART_MAIN);
+  lv_obj_set_style_arc_width(arc, 2, LV_PART_MAIN);
   lv_obj_set_style_arc_color(arc, COLOR_GOLD, LV_PART_INDICATOR);
-  lv_obj_set_style_arc_width(arc, 2, LV_PART_INDICATOR);
+  lv_obj_set_style_arc_width(arc, 3, LV_PART_INDICATOR);
 
   tasbih_label = lv_label_create(tile);
   lv_obj_set_style_text_color(tasbih_label, COLOR_TEXT, 0);
@@ -199,24 +188,24 @@ static void build_tasbih_screen(lv_obj_t *tile) {
   add_pagination_dots(tile, 1);
 }
 
-/* ---------- Экран 2: Рамадан (с исламской аркой) ---------- */
+/* ---------- Экран 3: Рамадан (с исламской аркой) ---------- */
 static void build_countdown_screen(lv_obj_t *tile) {
-  create_starry_background(tile);
+  set_screen_background(tile);
 
   lv_obj_t *card = lv_obj_create(tile);
-  lv_obj_set_size(card, 220, 180);
+  lv_obj_set_size(card, 210, 160);
   lv_obj_center(card);
   lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
-  lv_obj_set_style_bg_opa(card, LV_OPA_80, 0);
+  lv_obj_set_style_bg_opa(card, LV_OPA_60, 0);
   lv_obj_set_style_radius(card, 16, 0);
   lv_obj_set_style_border_width(card, 0, 0);
   lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
 
-  // Исламская куполообразная арка сверху карточки
+  // Исламская куполообразная арка сверху карточки (как на макете)
   lv_obj_t *dome = lv_obj_create(card);
-  lv_obj_set_size(dome, 140, 45);
-  lv_obj_align(dome, LV_ALIGN_TOP_MID, 0, 5);
-  lv_obj_set_style_radius(dome, 70, LV_PART_MAIN);
+  lv_obj_set_size(dome, 130, 40);
+  lv_obj_align(dome, LV_ALIGN_TOP_MID, 0, 3);
+  lv_obj_set_style_radius(dome, 65, LV_PART_MAIN);
   lv_obj_set_style_border_color(dome, COLOR_GOLD, 0);
   lv_obj_set_style_border_width(dome, 2, 0);
   lv_obj_set_style_bg_opa(dome, LV_OPA_TRANSP, 0);
@@ -226,16 +215,16 @@ static void build_countdown_screen(lv_obj_t *tile) {
   lv_obj_set_style_text_color(l_title, COLOR_TEXT_DIM, 0);
   lv_obj_set_style_text_font(l_title, &lv_font_montserrat_14, 0);
   lv_label_set_text(l_title, "Ramadan —");
-  lv_obj_align(l_title, LV_ALIGN_TOP_MID, 0, 55);
+  lv_obj_align(l_title, LV_ALIGN_TOP_MID, 0, 48);
 
   lv_obj_t *l_days = lv_label_create(card);
   lv_obj_set_style_text_color(l_days, COLOR_GOLD, 0);
   lv_obj_set_style_text_font(l_days, &lv_font_montserrat_32, 0);
   lv_label_set_text(l_days, "127 days");
-  lv_obj_align(l_days, LV_ALIGN_CENTER, 0, 15);
+  lv_obj_align(l_days, LV_ALIGN_CENTER, 0, 10);
 
   lv_obj_t *bar = lv_bar_create(card);
-  lv_obj_set_size(bar, 180, 6);
+  lv_obj_set_size(bar, 170, 6);
   lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, -15);
   lv_bar_set_value(bar, 60, LV_ANIM_OFF);
   lv_obj_set_style_bg_color(bar, COLOR_BG, LV_PART_MAIN);
@@ -244,18 +233,18 @@ static void build_countdown_screen(lv_obj_t *tile) {
   add_pagination_dots(tile, 2);
 }
 
-/* ---------- Экран 3: Следующая молитва ---------- */
+/* ---------- Экран 4: Следующая молитва ---------- */
 static void build_next_prayer_screen(lv_obj_t *tile) {
-  create_starry_background(tile);
+  set_screen_background(tile);
 
   lv_obj_t *back_btn = lv_label_create(tile);
   lv_obj_set_style_text_color(back_btn, COLOR_GOLD, 0);
   lv_obj_set_style_text_font(back_btn, &lv_font_montserrat_16, 0);
   lv_label_set_text(back_btn, "<");
-  lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 18, 12);
+  lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 20, 15);
 
   lv_obj_t *card = lv_obj_create(tile);
-  lv_obj_set_size(card, 215, 120);
+  lv_obj_set_size(card, 215, 115);
   lv_obj_center(card);
   lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
   lv_obj_set_style_bg_opa(card, LV_OPA_90, 0);
@@ -278,7 +267,7 @@ static void build_next_prayer_screen(lv_obj_t *tile) {
   add_pagination_dots(tile, 3);
 }
 
-/* ---------- Экран 4: Список молитв ---------- */
+/* ---------- Экран 5: Список молитв ---------- */
 struct PrayerRow { const char *name; const char *time; };
 static PrayerRow prayers[] = {
   {"Fajr",    "02:38"},
@@ -289,13 +278,13 @@ static PrayerRow prayers[] = {
 };
 
 static void build_prayers_screen(lv_obj_t *tile) {
-  create_starry_background(tile);
+  set_screen_background(tile);
 
   lv_obj_t *back_btn = lv_label_create(tile);
   lv_obj_set_style_text_color(back_btn, COLOR_GOLD, 0);
   lv_obj_set_style_text_font(back_btn, &lv_font_montserrat_16, 0);
   lv_label_set_text(back_btn, "<");
-  lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 18, 12);
+  lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 20, 15);
 
   lv_obj_t *card = lv_obj_create(tile);
   lv_obj_set_size(card, 215, 185);
