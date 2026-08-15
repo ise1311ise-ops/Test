@@ -106,60 +106,22 @@ static void add_pagination_dots(lv_obj_t *tile, int active_index) {
   }
 }
 
-/* Генерация геометрической мандалы (узора) */
-static void create_mandala(lv_obj_t *parent, int size) {
-  lv_obj_t *mandala_cont = lv_obj_create(parent);
-  lv_obj_set_size(mandala_cont, size, size);
-  lv_obj_center(mandala_cont);
-  lv_obj_set_style_bg_opa(mandala_cont, LV_OPA_TRANSP, 0);
-  lv_obj_set_style_border_width(mandala_cont, 0, 0);
-  lv_obj_clear_flag(mandala_cont, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-
-  // Внешний контурный круг
-  lv_obj_t *c1 = lv_obj_create(mandala_cont);
-  lv_obj_set_size(c1, size, size);
-  lv_obj_center(c1);
-  lv_obj_set_style_radius(c1, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_border_color(c1, COLOR_GOLD, 0);
-  lv_obj_set_style_border_width(c1, 1, 0);
-  lv_obj_set_style_bg_opa(c1, LV_OPA_TRANSP, 0);
-  lv_obj_clear_flag(c1, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-
-  // Пересекающиеся линии узора (лепестки мандалы)
-  for(int deg = 0; deg < 360; deg += 30) {
-    lv_obj_t *line_petal = lv_obj_create(mandala_cont);
-    lv_obj_set_size(line_petal, size - 20, 2);
-    lv_obj_center(line_petal);
-    lv_obj_set_style_bg_color(line_petal, COLOR_GOLD, 0);
-    lv_obj_set_style_border_width(line_petal, 0, 0);
-    lv_obj_set_style_opa(line_petal, LV_OPA_70, 0);
-    lv_obj_set_angle(line_petal, deg * 10);
-    lv_obj_clear_flag(line_petal, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-  }
-}
-
-/* ---------- Экран 1: Главная (BarakatTime с логотипом-цветком) ---------- */
+/* ---------- Экран 1: Главная (BarakatTime) ---------- */
 static void build_home_screen(lv_obj_t *tile) {
   set_screen_background(tile);
-
-  // Логотип-цветок (мини-мандала из макета)
-  create_mandala(tile, 65);
 
   lv_obj_t *title = lv_label_create(tile);
   lv_obj_set_style_text_color(title, COLOR_TEXT, 0);
   lv_obj_set_style_text_font(title, &lv_font_montserrat_22, 0);
   lv_label_set_text(title, "BarakatTime");
-  lv_obj_align(title, LV_ALIGN_CENTER, 0, 45);
+  lv_obj_align(title, LV_ALIGN_CENTER, 0, 25);
 
   add_pagination_dots(tile, 0);
 }
 
-/* ---------- Экран 2: Тасбих (с большой мандалой) ---------- */
+/* ---------- Экран 2: Тасбих ---------- */
 static void build_tasbih_screen(lv_obj_t *tile) {
   set_screen_background(tile);
-
-  // Мандала на заднем плане тасбиха (как на картинке)
-  create_mandala(tile, 175);
 
   lv_obj_t *arc = lv_arc_create(tile);
   tasbih_arc = arc;
@@ -188,7 +150,7 @@ static void build_tasbih_screen(lv_obj_t *tile) {
   add_pagination_dots(tile, 1);
 }
 
-/* ---------- Экран 3: Рамадан (с исламской аркой) ---------- */
+/* ---------- Экран 3: Рамадан ---------- */
 static void build_countdown_screen(lv_obj_t *tile) {
   set_screen_background(tile);
 
@@ -201,31 +163,21 @@ static void build_countdown_screen(lv_obj_t *tile) {
   lv_obj_set_style_border_width(card, 0, 0);
   lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
 
-  // Исламская куполообразная арка сверху карточки (как на макете)
-  lv_obj_t *dome = lv_obj_create(card);
-  lv_obj_set_size(dome, 130, 40);
-  lv_obj_align(dome, LV_ALIGN_TOP_MID, 0, 3);
-  lv_obj_set_style_radius(dome, 65, LV_PART_MAIN);
-  lv_obj_set_style_border_color(dome, COLOR_GOLD, 0);
-  lv_obj_set_style_border_width(dome, 2, 0);
-  lv_obj_set_style_bg_opa(dome, LV_OPA_TRANSP, 0);
-  lv_obj_clear_flag(dome, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-
   lv_obj_t *l_title = lv_label_create(card);
   lv_obj_set_style_text_color(l_title, COLOR_TEXT_DIM, 0);
   lv_obj_set_style_text_font(l_title, &lv_font_montserrat_14, 0);
   lv_label_set_text(l_title, "Ramadan —");
-  lv_obj_align(l_title, LV_ALIGN_TOP_MID, 0, 48);
+  lv_obj_align(l_title, LV_ALIGN_TOP_MID, 0, 25);
 
   lv_obj_t *l_days = lv_label_create(card);
   lv_obj_set_style_text_color(l_days, COLOR_GOLD, 0);
   lv_obj_set_style_text_font(l_days, &lv_font_montserrat_32, 0);
   lv_label_set_text(l_days, "127 days");
-  lv_obj_align(l_days, LV_ALIGN_CENTER, 0, 10);
+  lv_obj_align(l_days, LV_ALIGN_CENTER, 0, -5);
 
   lv_obj_t *bar = lv_bar_create(card);
   lv_obj_set_size(bar, 170, 6);
-  lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, -15);
+  lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, -18);
   lv_bar_set_value(bar, 60, LV_ANIM_OFF);
   lv_obj_set_style_bg_color(bar, COLOR_BG, LV_PART_MAIN);
   lv_obj_set_style_bg_color(bar, COLOR_GOLD, LV_PART_INDICATOR);
@@ -237,6 +189,7 @@ static void build_countdown_screen(lv_obj_t *tile) {
 static void build_next_prayer_screen(lv_obj_t *tile) {
   set_screen_background(tile);
 
+  // Кнопка назад (стрелка)
   lv_obj_t *back_btn = lv_label_create(tile);
   lv_obj_set_style_text_color(back_btn, COLOR_GOLD, 0);
   lv_obj_set_style_text_font(back_btn, &lv_font_montserrat_16, 0);
