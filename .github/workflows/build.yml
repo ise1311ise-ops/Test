@@ -41,7 +41,7 @@ jobs:
 
       - name: Compile
         run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32s3 --libraries libraries --export-binaries --output-dir build src/BarakatTime
+          arduino-cli compile --fqbn esp32:esp32:esp32s3:PartitionScheme=huge_app --libraries libraries --export-binaries --output-dir build src/BarakatTime 
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
