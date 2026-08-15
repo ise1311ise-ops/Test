@@ -237,7 +237,7 @@ static void build_prayers_screen(lv_obj_t *tile) {
     lv_label_set_text(name, p.name);
     lv_obj_align(name, LV_ALIGN_LEFT_MID, 0, 0);
 
--   lv_obj_t *time = lv_label_create(row);
+    lv_obj_t *time = lv_label_create(row);
     lv_obj_set_style_text_color(time, COLOR_GOLD, 0);
     lv_obj_set_style_text_font(time, &lv_font_montserrat_14, 0);
     lv_label_set_text(time, p.time);
