@@ -34,3 +34,6 @@
 #define TP_RST 13
 #define TP_INT 14
 #endif
+
+#define BUZZER_PIN 42   // если у тебя старая ревизия платы — скажи, дам другой пин
+#define BOOT_PIN 0      // кнопка BOOT, зажать для точки доступа
